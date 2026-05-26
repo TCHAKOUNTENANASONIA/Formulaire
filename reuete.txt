@@ -1,0 +1,15 @@
+CREATE DATABASE IF NOT EXISTS bd_inscription
+    CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+USE bd_inscription;
+
+CREATE TABLE IF NOT EXISTS etudiants (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    matricule VARCHAR(10) NOT NULL UNIQUE,
+    noms VARCHAR(100) NOT NULL,
+    date_naissance DATE NOT NULL,
+    sexe ENUM('M','F') NOT NULL,
+    nationale VARCHAR(60) NOT NULL,
+    cv_path VARCHAR(255) NOT NULL,
+    date_inscription DATETIME DEFAULT CURRENT_TIMESTAMP
+);
