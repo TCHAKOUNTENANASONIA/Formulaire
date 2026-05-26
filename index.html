@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription Étudiant – Validation DOM</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+    <h1> Formulaire d'inscription étudiant</h1>
+
+    <!-- 
+        Formulaire : 
+        - method="POST" : envoi caché
+        - enctype="multipart/form-data" : pour uploader un fichier
+        - id="formInscription" : utilisé par JavaScript
+        - action="traitement.php" : script serveur
+    -->
+    <form id="formInscription" action="traitement.php" method="POST" enctype="multipart/form-data">
+        
+        <!-- Matricule -->
+        <div class="form-group">
+            <label for="matricule">Matricule *</label>
+            <input type="text" id="matricule" name="matricule"
+                   pattern="[0-9]{2}[A-Z]{1}[0-9]{4}"
+                   placeholder="Ex : 22P4001" required>
+            <span class="error" id="err-matricule"></span>
+            <small>Format : 2 chiffres + 1 lettre majuscule + 4 chiffres</small>
+        </div>
+
+        <!-- Noms et prénoms -->
+        <div class="form-group">
+            <label for="noms">Noms et prénoms *</label>
+            <input type="text" id="noms" name="noms"
+                   minlength="3" maxlength="100" required
+                   placeholder="Jean Dupont">
+            <span class="error" id="err-noms"></span>
+        </div>
+
+        <!-- Date de naissance -->
+        <div class="form-group">
+            <label for="ddn">Date de naissance *</label>
+            <input type="date" id="ddn" name="date_naissance" required>
+            <span class="error" id="err-ddn"></span>
+        </div>
+
+        <!-- Sexe (boutons radio) -->
+        <div class="form-group">
+            <label>Sexe *</label>
+            <label><input type="radio" name="sexe" value="M" required> Masculin</label>
+            <label><input type="radio" name="sexe" value="F"> Féminin</label>
+            <span class="error" id="err-sexe"></span>
+        </div>
+
+        <!-- Nationalité (liste déroulante) -->
+        <div class="form-group">
+            <label for="nationalite">Nationalité *</label>
+            <select id="nationalite" name="nationalite" required>
+                <option value="">-- Choisir --</option>
+                <option value="Camerounais">Camerounais</option>
+                <option value="Français">Français</option>
+                <option value="Autre">Autre</option>
+            </select>
+        </div>
+
+        <!-- CV (fichier PDF) -->
+        <div class="form-group">
+            <label for="cv">CV (PDF, max 2 Mo) *</label>
+            <input type="file" id="cv" name="cv"
+                   accept=".pdf,application/pdf" required>
+            <span class="error" id="err-cv"></span>
+            <small>Fichier PDF uniquement, taille ≤ 2 Mo</small>
+        </div>
+
+        <button type="submit"> S'inscrire</button>
+    </form>
+
+    <!-- Zone d'affichage du message de retour  -->
+    <div id="message" class="message-area"></div>
+</div>
+
+
+<script>
+    // On attend que toute la page soit chargée avant d'exécuter le script
+    document.addEventListener('DOMContentLoaded', function() {
+
+        // Récupération du formulaire grâce à son ID (DOM)
+        const form = document.getElementById('formInscription');
+
+        // Fonction pour afficher un message d'erreur sous un champ
+        function afficherErreur(idSpan, message) {
+            const span = document.getElementById(idSpan);
+            if (span) {
+                span.innerHTML = message;   // modifie le contenu HTML du span
+            }
+        }
+
+        // Fonction pour effacer le message d'erreur d'un champ
+        function effacerErreur(idSpan) {
+            const span = document.getElementById(idSpan);
+            if (span) {
+                span.innerHTML = '';        // vide le contenu
+            }
+        }
+
+        // Écoute de l'événement "submit" du formulaire (quand on clique sur le bouton)
+        form.addEventListener('submit', function(event) {
+            // 1. Empêcher l'envoi traditionnel (qui rechargerait la page)
+            event.preventDefault();
+
+            // 2. Récupération des valeurs saisies (via le DOM)
+            const matricule   = document.getElementById('matricule').value.trim();
+            const noms        = document.getElementById('noms').value.trim();
+            const dateNaissance = document.getElementById('ddn').value;
+            const sexeRadio   = document.querySelector('input[name="sexe"]:checked');
+            const nationalite = document.getElementById('nationalite').value;
+            const cvFile      = document.getElementById('cv').files[0];
+
+            let valid = true;   // drapeau : tout est correct ?
+
+            // 3. Validation du matricule (regex)
+            const matRegex = /^[0-9]{2}[A-Z]{1}[0-9]{4}$/;
+            if (!matricule || !matRegex.test(matricule)) {
+                afficherErreur('err-matricule', 'Format invalide (ex: 22P4001)');
+                valid = false;
+            } else {
+                effacerErreur('err-matricule');
+            }
+
+            // 4. Validation des noms (longueur entre 3 et 100)
+            if (noms.length < 3 || noms.length > 100) {
+                afficherErreur('err-noms', 'Le nom doit comporter entre 3 et 100 caractères.');
+                valid = false;
+            } else {
+                effacerErreur('err-noms');
+            }
+
+            // 5. Validation de l'âge (≥ 16 ans)
+            if (!dateNaissance) {
+                afficherErreur('err-ddn', 'Date de naissance obligatoire.');
+                valid = false;
+            } else {
+                const ddn = new Date(dateNaissance);
+                const aujourdhui = new Date();
+                let age = aujourdhui.getFullYear() - ddn.getFullYear();
+                const mois = aujourdhui.getMonth() - ddn.getMonth();
+                if (mois < 0 || (mois === 0 && aujourdhui.getDate() < ddn.getDate())) {
+                    age--;
+                }
+                if (age < 16) {
+                    afficherErreur('err-ddn', 'Vous devez avoir au moins 16 ans.');
+                    valid = false;
+                } else {
+                    effacerErreur('err-ddn');
+                }
+            }
+
+            // 6. Validation du sexe (un radio coché)
+            if (!sexeRadio) {
+                afficherErreur('err-sexe', 'Veuillez sélectionner votre sexe.');
+                valid = false;
+            } else {
+                effacerErreur('err-sexe');
+            }
+
+            // 7. Validation du fichier CV (présence, type PDF, taille ≤ 2 Mo)
+            if (!cvFile) {
+                afficherErreur('err-cv', 'Veuillez joindre votre CV (PDF).');
+                valid = false;
+            } else {
+                // Vérifier le type MIME (commence par "application/pdf")
+                if (cvFile.type !== 'application/pdf') {
+                    afficherErreur('err-cv', 'Seuls les fichiers PDF sont acceptés.');
+                    valid = false;
+                } else if (cvFile.size > 2 * 1024 * 1024) {
+                    afficherErreur('err-cv', 'Le fichier ne doit pas dépasser 2 Mo.');
+                    valid = false;
+                } else {
+                    effacerErreur('err-cv');
+                }
+            }
+
+            // 8. Si la validation échoue, on arrête l'envoi
+            if (!valid) return;
+
+            // 9. Validation réussie : on envoie les données via AJAX (fetch)
+            //    On crée un objet FormData qui contient tous les champs du formulaire
+            const formData = new FormData(form);
+
+            // Envoi asynchrone vers "traitement.php"
+            fetch('traitement.php', {
+                method: 'POST',
+                body: formData          // FormData gère automatiquement les fichiers
+            })
+            .then(response => response.json())   // On attend du JSON
+            .then(data => {
+                const messageDiv = document.getElementById('message');
+                if (data.success) {
+                    messageDiv.className = 'message-area success';
+                    messageDiv.innerHTML = '✅ ' + data.message;
+                    form.reset();   // Vider tous les champs du formulaire
+                    // Effacer les messages d'erreur résiduels
+                    document.querySelectorAll('.error').forEach(span => span.innerHTML = '');
+                } else {
+                    messageDiv.className = 'message-area error';
+                    messageDiv.innerHTML = '❌ ' + data.message;
+                }
+            })
+            .catch(error => {
+                // En cas d'erreur réseau ou serveur
+                const messageDiv = document.getElementById('message');
+                messageDiv.className = 'message-area error';
+                messageDiv.innerHTML = '❌ Erreur technique : ' + error.message;
+            });
+        });
+    });
+</script>
+</body>
+</html>
